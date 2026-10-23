@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER TERMINAL - OUSSAMA Z</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: #03070d;
+            color: #00ff66;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* خلفية الشبكة والماتريكس */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0.25;
+        }
+
+        /* الرادار السينمائي */
+        .radar-box {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            border: 2px solid #00ff66;
+            border-radius: 50%;
+            z-index: 2;
+            background: radial-gradient(circle, rgba(0,255,102,0.1) 0%, rgba(0,0,0,0.8) 70%);
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .radar-line {
+            position: absolute;
+            width: 50%;
+            height: 2px;
+            background: #00ff66;
+            top: 50%;
+            left: 50%;
+            transform-origin: left center;
+            animation: rotateRadar 2s linear infinite;
+            box-shadow: 0 0 8px #00ff66;
+        }
+
+        .radar-circle {
+            position: absolute;
+            border: 1px dashed rgba(0, 255, 102, 0.4);
+            border-radius: 50%;
+        }
+
+        .rc1 { width: 40px; height: 40px; }
+        .rc2 { width: 90px; height: 90px; }
+
+        @keyframes rotateRadar {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* حاوية الشاشة الرئيسية */
+        .terminal-container {
+            position: relative;
+            z-index: 3;
+            width: 85%;
+            max-width: 900px;
+            height: 80vh;
+            background: rgba(5, 12, 22, 0.85);
+            border: 1px solid #00ff66;
+            box-shadow: 0 0 25px rgba(0, 255, 102, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(5px);
+        }
+
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #00ff66;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #00e5ff;
+        }
+
+        .terminal-body {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* رسالة الترحيب */
+        .welcome-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff0055;
+            text-shadow: 0 0 10px #ff0055;
+            margin-bottom: 15px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        /* سطر التخمين والألوان */
+        .log-entry {
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .color-green { color: #00ff66; }
+        .color-cyan { color: #00e5ff; }
+        .color-yellow { color: #ffe600; }
+        .color-red { color: #ff0055; }
+        .color-purple { color: #bd00ff; }
+
+        /* البطاقة النهائية للبيانات */
+        .final-card {
+            display: none;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #ff0055;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+            padding: 20px;
+            border-radius: 5px;
+            animation: fadeIn 1s forwards;
+        }
+
+        .final-card h2 {
+            color: #ff0055;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 20px;
+            text-shadow: 0 0 8px #ff0055;
+        }
+
+        .data-row {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .data-label {
+            color: #00e5ff;
+            font-weight: bold;
+        }
+
+        .data-value a {
+            color: #ffe600;
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .data-value a:hover {
+            text-decoration: underline;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- خلفية تأثير الماتريكس -->
+    <canvas id="matrix"></canvas>
+
+    <!-- الرادار -->
+    <div class="radar-box">
+        <div class="radar-circle rc1"></div>
+        <div class="radar-circle rc2"></div>
+        <div class="radar-line"></div>
+    </div>
+
+    <!-- النافذة الرئيسية -->
+    <div class="terminal-container">
+        <div class="terminal-header">
+            <span>[SYSTEM STATUS: CRITICAL]</span>
+            <span>TARGET_ACQUISITION_MODE</span>
+            <span>OUSSAMA_Z_SYSTEM</span>
+        </div>
+
+        <div class="welcome-title" id="welcomeText"></div>
+
+        <div class="terminal-body" id="logs"></div>
+
+        <!-- البطاقة النهائية -->
+        <div class="final-card" id="finalCard">
+            <h2>[ TARGET DATA ACQUIRED / تم استخراج البيانات ]</h2>
+            
+            <div class="data-row">
+                <span class="data-label">رابط الصفحة:</span>
+                <span class="data-value"><a href="https://www.facebook.com/profile.php?id=61595213407240" target="_blank">https://www.facebook.com/profile.php?id=61595213407240</a></span>
+            </div>
+
+            <div class="data-row">
+                <span class="data-label">رابط ملف الصفحة:</span>
+                <span class="data-value"><a href="https://www.facebook.com/profile.php?id=61577773004435" target="_blank">https://www.facebook.com/profile.php?id=61577773004435</a></span>
+            </div>
+
+            <div class="data-row">
+                <span class="data-label">عنوان الـ IP المستهدف:</span>
+                <span class="data-value" style="color: #ff0055; font-weight: bold;">197.206.182.94 (PROXY_DETECTED)</span>
+            </div>
+
+            <div class="data-row">
+                <span class="data-label">إحداثيات الموقع (GPS):</span>
+                <span class="data-value" style="color: #00ff66;">35.7027° N, 0.6306° W (Accuracy: 99.8%)</span>
+            </div>
+
+            <div class="data-row">
+                <span class="data-label">حالة الحساب:</span>
+                <span class="data-value" style="color: #bd00ff;">BYPASSED / EXPOSED</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // خلفية الماتريكس
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()*&^%";
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(3, 7, 13, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#00ff66";
+            ctx.font = fontSize + "px monospace";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+
+        // المحاكاة والتخيل
+        const welcomeText = "WELCOME OUSSAMA /Z";
+        const welcomeContainer = document.getElementById('welcomeText');
+        const logsContainer = document.getElementById('logs');
+        const finalCard = document.getElementById('finalCard');
+
+        let charIndex = 0;
+
+        // طباعة العنوان ترحيبي
+        function typeWelcome() {
+            if (charIndex < welcomeText.length) {
+                welcomeContainer.innerHTML += welcomeText.charAt(charIndex);
+                charIndex++;
+                setTimeout(typeWelcome, 100);
+            } else {
+                setTimeout(startBruteForce, 500);
+            }
+        }
+
+        const colors = ['color-green', 'color-cyan', 'color-yellow', 'color-red', 'color-purple'];
+
+        function getRandomColor() {
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function generateRandomIP() {
+            return `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+        }
+
+        function generateRandomCoords() {
+            return `${(Math.random() * 90).toFixed(4)}° N, ${(Math.random() * 180).toFixed(4)}° E`;
+        }
+
+        function generateRandomHash() {
+            return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
+
+        let totalLogs = 0;
+
+        function startBruteForce() {
+            const interval = setInterval(() => {
+                totalLogs++;
+
+                const logType = Math.floor(Math.random() * 4);
+                let text = "";
+
+                if (logType === 0) {
+                    text = `[BRUTE-FORCE] Testing hash key: 0x${generateRandomHash()} -> FAILED`;
+                } else if (logType === 1) {
+                    text = `[SCANNING IP] Ping node ${generateRandomIP()} ... Latency: ${Math.floor(Math.random()*100)}ms`;
+                } else if (logType === 2) {
+                    text = `[GPS TRACK] Intercepting satellite signal at [${generateRandomCoords()}]`;
+                } else {
+                    text = `[FB_TOKEN] Cracking session token: FB_AUTH_${generateRandomHash().toUpperCase()} ... MATCHING`;
+                }
+
+                const div = document.createElement('div');
+                div.className = `log-entry ${getRandomColor()}`;
+                div.innerText = text;
+                logsContainer.appendChild(div);
+
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+
+                if (totalLogs > 45) {
+                    clearInterval(interval);
+                    showFinalData();
+                }
+            }, 60);
+        }
+
+        function showFinalData() {
+            const finalLog = document.createElement('div');
+            finalLog.className = 'log-entry color-green';
+            finalLog.style.fontWeight = 'bold';
+            finalLog.innerText = "\n[✔] ACCESS GRANTED. ALL TARGET DATA EXTRAPOLATED SUCCESSFULLY.\n";
+            logsContainer.appendChild(finalLog);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+
+            setTimeout(() => {
+                finalCard.style.display = 'block';
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            }, 800);
+        }
+
+        // البدء عند التحميل
+        window.onload = () => {
+            typeWelcome();
+        };
+    </script>
+</body>
+</html>
